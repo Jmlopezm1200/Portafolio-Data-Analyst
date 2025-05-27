@@ -1,0 +1,72 @@
+SQL Cheat Sheet
+1.	1. Aggregation Functions
+Function	Description
+COUNT(column)	Returns the number of rows that match a condition.
+SUM(column)	Adds up all the values in a column.
+AVG(column)	Calculates the average value of a column.
+MIN(column)	Returns the smallest value in a column.
+MAX(column)	Returns the largest value in a column.
+GROUP_CONCAT(column)	Concatenates values from multiple rows into a single string.
+________________________________________
+2.	2. String Functions
+Function	Description
+LOWER(string)	Converts a string to lowercase.
+UPPER(string)	Converts a string to uppercase.
+LENGTH(string)	Returns the length of a string.
+SUBSTRING(string, start, length)	Extracts a portion of a string.
+REPLACE(string, old, new)	Replaces occurrences of a substring.
+TRIM(string)	Removes leading and trailing spaces.
+CONCAT(string1, string2, ...)	Combines multiple strings into one.
+________________________________________
+3.	3. Date & Time Functions
+Function	Description
+NOW()	Returns the current date and time.
+CURDATE()	Returns the current date.
+CURTIME()	Returns the current time.
+YEAR(date), MONTH(date), DAY(date)	Extracts parts of a date.
+DATEDIFF(date1, date2)	Returns the difference in days between two dates.
+DATE_ADD(date, INTERVAL value unit)	Adds time to a date.
+DATE_SUB(date, INTERVAL value unit)	Subtracts time from a date.
+________________________________________
+4.	4. Conditional Functions
+Function	Description
+IF(condition, true_value, false_value)	Returns one value if the condition is true and another if false.
+CASE WHEN condition THEN result ELSE other_result END	Returns different values based on conditions.
+COALESCE(column, default_value)	Returns the first non-null value.
+NULLIF(value1, value2)	Returns NULL if values are equal; otherwise, returns value1.
+________________________________________
+5.	5. Window Functions
+Function	Description
+ROW_NUMBER() OVER (PARTITION BY column ORDER BY column)	Assigns a unique row number within each partition.
+RANK() OVER (PARTITION BY column ORDER BY column)	Assigns a rank, allowing duplicate rankings.
+DENSE_RANK() OVER (PARTITION BY column ORDER BY column)	Similar to RANK(), but without gaps in rankings.
+LAG(column, offset, default) OVER (ORDER BY column)	Returns the previous row’s value.
+LEAD(column, offset, default) OVER (ORDER BY column)	Returns the next row’s value.
+NTILE(n) OVER (ORDER BY column)	Divides the result set into n buckets and assigns a bucket number.
+FIRST_VALUE(column) OVER (PARTITION BY column ORDER BY column)	Returns the first value in a partition.
+LAST_VALUE(column) OVER (PARTITION BY column ORDER BY column ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)	Returns the last value in a partition.
+________________________________________
+6.	6. Joins & Set Operations
+Clause	Description
+INNER JOIN	Returns only matching rows from both tables.
+LEFT JOIN	Returns all rows from the left table and matching rows from the right.
+RIGHT JOIN	Returns all rows from the right table and matching rows from the left.
+FULL JOIN	Returns all rows from both tables.
+UNION	Combines results of two queries, removing duplicates.
+UNION ALL	Combines results of two queries, keeping duplicates.
+________________________________________
+7.	7. Filtering & Sorting
+Clause	Description
+WHERE condition	Filters rows based on a condition.
+HAVING condition	Filters grouped rows.
+DISTINCT	Removes duplicate values from results.
+ORDER BY column ASC/DESC	Sorts results in ascending or descending order.
+LIMIT number	Limits the number of returned rows.
+________________________________________
+8.	8. Subqueries & Common Table Expressions (CTEs)
+Clause	Description
+(SELECT column FROM table)	A subquery inside another query.
+WITH cte_name AS (SELECT ...)	A temporary named result set for complex queries.
+EXISTS (SELECT ...)	Returns true if the subquery has any rows.
+IN (SELECT ...)	Checks if a value is in a subquery result.
+
