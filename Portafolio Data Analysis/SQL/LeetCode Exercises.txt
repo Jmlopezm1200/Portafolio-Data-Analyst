@@ -1,0 +1,99 @@
+-- MAX Solution
+select customer_number 
+from Orders 
+group by customer_number 
+having count(order_number) = 
+    (select max(order_num) 
+    from (select count(order_number) as order_num 
+    from Orders 
+    group by customer_number) as Order_nums) 
+
+--------------------------------------------------------------------
+
+select s.name
+from SalesPerson s
+where s.sales_id not in
+    (select s.sales_id
+    from SalesPerson s
+        left join Orders o on s.sales_id = o.sales_id
+        left join Company c on o.com_id = c.com_id
+    where c.name = 'Red')
+
+
+--------------------------------------------------------------------
+
+UPDATE Salary
+SET sex = CASE 
+            WHEN sex = 'm' THEN 'f' 
+            ELSE 'm' 
+          END;
+
+--------------------------------------------------------------------
+select actor_id,director_id
+from ActorDirector 
+group by actor_id,director_id
+Having count(timestamp)>=3;
+
+--------------------------------------------------------------------
+SELECT product_id, product_name
+FROM Sales 
+JOIN Product 
+Using(product_id)
+GROUP BY product_id
+HAVING MIN(sale_date) >= '2019-01-01' AND MAX(sale_date) <= '2019-03-31' 
+
+--------------------------------------------------------------------
+
+SELECT employee_id FROM Employees WHERE employee_id NOT IN (SELECT employee_id FROM Salaries)
+UNION 
+SELECT employee_id FROM Salaries WHERE employee_id NOT IN (SELECT employee_id FROM Employees)
+ORDER BY 1 ASC 
+
+--------------------------------------------------------------------
+# SELECT IF(500<1000, "YES", "NO");
+# It returns "YES" if the condition is TRUE, or "NO" if the condition is FALSE:
+
+SELECT Department.id,
+sum(if(month='Jan',revenue,null)) as Jan_Revenue,
+sum(if(month='Feb',revenue,null)) as Feb_Revenue,
+sum(if(month='Mar',revenue,null)) as Mar_Revenue,
+sum(if(month='Apr',revenue,null)) as Apr_Revenue,
+sum(if(month='May',revenue,null)) as May_Revenue,
+sum(if(month='Jun',revenue,null)) as Jun_Revenue,
+sum(if(month='Jul',revenue,null)) as Jul_Revenue,
+sum(if(month='Aug',revenue,null)) as Aug_Revenue,
+sum(if(month='Sep',revenue,null)) as Sep_Revenue,
+sum(if(month='Oct',revenue,null)) as Oct_Revenue,
+sum(if(month='Nov',revenue,null)) as Nov_Revenue,
+sum(if(month='Dec',revenue,null)) as Dec_Revenue
+from Department 
+GROUP BY id;
+
+--------------------------------------------------------------------
+
+# Write your MySQL query statement below
+SELECT product_id, 'store1' AS store, store1 AS price FROM Products  WHERE store1 IS NOT NULL
+UNION ALL
+SELECT product_id, 'store2' AS store, store2 AS price FROM Products  WHERE store2 IS NOT NULL
+UNION ALL
+SELECT product_id, 'store3' AS store, store3 AS price FROM Products  WHERE store3 IS NOT NULL
+
+--------------------------------------------------------------------
+
+
+SELECT 
+    date_id, 
+    make_name, 
+    COUNT(DISTINCT lead_id) AS unique_leads, 
+    COUNT(DISTINCT partner_id) AS unique_partners
+FROM DailySales
+GROUP BY date_id, make_name;
+
+
+---------------------------------------------------------------------
+
+# Write your MySQL query statement below
+SELECT user_id, email
+FROM Users
+WHERE email REGEXP '^[a-zA-Z0-9_]+@[a-zA-Z]+\\.com$'
+ORDER BY user_id ASC
