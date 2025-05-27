@@ -1,0 +1,93 @@
+import time
+
+from selenium import webdriver
+
+from selenium.webdriver.common.by import By
+
+from selenium.webdriver.support.ui import Select
+
+from selenium.webdriver.common.keys import Keys
+
+from selenium.common.exceptions import NoSuchElementException
+
+from selenium.webdriver.support.wait import WebDriverWait
+
+from selenium.webdriver.support import expected_conditions as EC
+
+from selenium.webdriver.edge.service import Service
+
+from selenium.webdriver.edge.options import Options
+
+from csv import writer
+
+from datetime import date
+
+import pandas as pd
+
+from openpyxl import load_workbook
+
+import msvcrt
+
+import getpass
+
+ 
+
+# Configuración de opciones
+
+options = Options()
+
+options.use_chromium = True  # Asegúrate de que se utiliza Chromium
+
+options.add_experimental_option("detach", True)
+
+ 
+
+# Inicia el servicio del driver (asegúrate de que la ruta sea correcta)
+
+service = Service("C:/Program Files (x86)/Microsoft/Edge/Application/msedgedriver.exe")
+
+ 
+
+# Crea el driver
+
+driver = webdriver.Edge(service=service, options=options)
+
+ 
+
+driver.get("LINK")
+
+ 
+
+user = input("*Ingresar usuario de red: ")
+
+password = getpass.getpass('*Ingresar contraseña: ')
+
+ 
+
+# Esperar hasta que el campo de usuario esté presente
+
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "user"))).send_keys(user)
+
+ 
+
+# Hacer clic en el campo de contraseña
+
+WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "fake_pass"))).click()
+
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "pass"))).send_keys(password)
+
+ 
+
+# Seleccionar el dominio
+
+WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "dominio"))).click()
+
+Select(driver.find_element(By.ID, "dominio")).select_by_visible_text("BANCODEBOGOTA")
+
+ 
+
+# Hacer clic en enviar
+
+WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "enviarLink"))).click()
+
+ 

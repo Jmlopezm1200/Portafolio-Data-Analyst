@@ -1,0 +1,1023 @@
+#Se añade en la sesion Escritorio remoto una nueva tabla llamada: Asociar perfil en el Flujo de Usuarios
+
+import time
+
+from selenium import webdriver
+
+from selenium.webdriver.common.by import By
+
+from selenium.webdriver.support.ui import Select
+
+from selenium.webdriver.common.keys import Keys
+
+from selenium.common.exceptions import NoSuchElementException
+
+from selenium.webdriver.support.wait import WebDriverWait
+
+from selenium.webdriver.support import expected_conditions as EC
+
+from csv import writer
+
+from datetime import date
+
+import pandas as pd
+
+from openpyxl import load_workbook
+
+import msvcrt
+
+import getpass
+
+ 
+
+today = date.today()
+
+Fecha = today.strftime("%d/%m/%y")
+
+ 
+
+driver = webdriver.Edge(executable_path="C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
+
+driver.implicitly_wait(7)
+
+ 
+
+driver.get("http://ppeportal.bancodebogota.net:8000/PPE/login.jsp")
+
+ 
+
+user = input("*Ingresar usuario de red: ")
+
+password = getpass.getpass('*Ingresar contraseña: ')
+
+ 
+
+driver.find_element_by_id("user").send_keys(user)
+
+driver.find_element_by_id("fake_pass").click()
+
+driver.find_element_by_id("pass").send_keys(password)
+
+driver.find_element_by_id("dominio").click()
+
+Select(driver.find_element_by_id("dominio")).select_by_visible_text("BANCODEBOGOTA")
+
+driver.find_element_by_id("enviarLink").click()
+
+ 
+
+driver.find_element_by_id("PRO920").click()
+
+driver.find_element_by_id("PRO921").click()
+
+driver.find_element(By.ID,"cargarApp").click() #nuevo boton
+
+window_after = driver.window_handles[1] # toma el control de la nueva pagina abierta
+
+ 
+
+driver.switch_to_window(window_after)# establece control sobre la nueva pagina abierta
+
+driver.maximize_window()
+
+driver.find_element(By.ID,'aplicaciones').click()
+
+driver.find_element(By.ID,'PRO669').click()
+
+ 
+
+driver.switch_to.frame(0)
+
+driver.find_element_by_xpath('/html/body/div/div[2]/div/div[1]/label/select/option[3]').click()#Muestra todas las entradas posibles (100 entradas por pagina)
+
+Total= driver.find_elements(By.XPATH, "//table[@id=\'example\']/tbody/tr")#cuenta el total de casos
+
+print("Total de casos: "+str(len(Total)))
+
+with open("PermisosCVU.csv","w",encoding="utf8",newline="") as f:#Crea un archivo
+
+     thewriter=writer(f)
+
+     header=["HostName","Usuario","Radicado","FechaAtencion","FechaRadicacion","Nombres","Cedula","CentroCostos","NombrCentroCostos","TipoNovedad","Operacion","RecursoTec","PermisoAsoc","DeviceID","Justif. Puertos USB","Obser(Marque con x)"]
+
+     thewriter.writerow(header)
+
+     
+
+     def Equipo_Recurso(): # Funcion que permite buscar el nombre del equipo.
+
+         try:# intenta ingresar al recurso Equipo_Recurso
+
+             WebDriverWait(driver,5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#PRO224 > .ui-icon")))
+
+             boton= driver.find_element(By.CSS_SELECTOR, "#PRO224 > .ui-icon")#Busca el boton que contiene el nombre de equipo
+
+             webdriver.ActionChains(driver).move_to_element(boton).perform()# centra en la pantalla el contenedor
+
+             time.sleep(1)
+
+             driver.find_element(By.CSS_SELECTOR, "#PRO224 > .ui-icon").click()
+
+             driver.switch_to.frame(0)
+
+             HN=driver.find_element_by_xpath('//*[@id="tEscRemNombreEquipo_Recurso_PRO224"]').get_attribute("value")#Obtiene el nombre de equipo
+
+             webdriver.ActionChains(driver).send_keys(Keys.ENTER).perform() #cierra la ventana de Equipo_Recurso
+
+                     
+
+         except (NoSuchElementException):# si no encuentra el nombre del equipo, se asigna un N/A
+
+             HN="N/A"    
+
+             pass
+
+         return HN #Retorna el posible nombre de equipo
+
+ 
+
+     def Equipo_Recurso_USB():# Funcion que busca el nombre de equipo en solicitudes de USB
+
+         try:
+
+             WebDriverWait(driver,5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#PRO8 > span")))
+
+             boton2= driver.find_element(By.CSS_SELECTOR, "#PRO8 > span")#Busca el boton que contiene el nombre de equipo
+
+             webdriver.ActionChains(driver).move_to_element(boton2).perform()# centra en la pantalla el contenedor
+
+             driver.find_element(By.CSS_SELECTOR, "#PRO8 > span").click()
+
+             driver.switch_to.frame(0)
+
+             HN2=driver.find_element_by_xpath("//*[@id='UsbNombreEquipo_Recurso_PRO8']").get_attribute("value")#Obtiene el nombre de equipo      
+
+             just=driver.find_element_by_xpath("//*[@id='UsbJustificacion_Recurso_PRO8']").get_attribute("value")#Obtiene el nombre de equipo      
+
+ 
+
+             webdriver.ActionChains(driver).send_keys(Keys.ENTER).perform() #cierra la ventana de Equipo_Recurso            
+
+         except (NoSuchElementException):# si no encuentra el nombre del equipo, se asigna un N/A                  
+
+             HN2="N/A"
+
+             just=""
+
+             pass
+
+         return HN2,just
+
+ 
+
+     def Equipo_Recurso_CD(): # Funcion que busca el nombre de equipo y DeviceID en solicitudes de desbloqueo CD
+
+         try:
+
+             WebDriverWait(driver,5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#PRO357 > span")))
+
+             boton3= driver.find_element(By.CSS_SELECTOR, "#PRO357 > span")#Busca el boton que contiene el nombre de equipo
+
+             webdriver.ActionChains(driver).move_to_element(boton3).perform()# centra en la pantalla el contenedor
+
+             driver.find_element(By.CSS_SELECTOR, "#PRO357 > span").click()
+
+             driver.switch_to.frame(0)
+
+             HN3=driver.find_element_by_xpath("//*[@id='CdNombreEquipo_Recurso_PRO357']").get_attribute("value")#Obtiene el nombre de equipo
+
+             D_Id=driver.find_element_by_xpath("//*[@id='CdDeviceId_Recurso_PRO357']").get_attribute("value")#Obtiene el DeviceID
+
+             webdriver.ActionChains(driver).send_keys(Keys.ENTER).perform() #cierra la ventana de Equipo_Recurso  
+
+         except NoSuchElementException:# si no encuentra el nombre del equipo, se asigna un N/A
+
+             HN3="N/A"
+
+             D_Id="N/A"
+
+             pass
+
+         return HN3,D_Id
+
+ 
+
+     def Regresar():# Regresa a la ventana anterior
+
+         time.sleep(1)  
+
+         driver.back()    
+
+         driver.switch_to.frame(0)
+
+         WebDriverWait(driver,5).until(EC.presence_of_element_located((By.XPATH, "//button[@id=\'irBandejaBtn\']/span[2]")))
+
+         driver.find_element(By.XPATH, "//button[@id=\'irBandejaBtn\']/span[2]").click()
+
+         WebDriverWait(driver,30).until(EC.presence_of_element_located((By.XPATH, "/html/body/div/div[2]/div/div[1]/label/select/option[3]")))      
+
+         driver.find_element(By.XPATH, "/html/body/div/div[2]/div/div[1]/label/select/option[3]").click()#Muestra todas las entradas posibles (100 entradas por pagina)
+
+ 
+
+     def Guardar():#Guarda la informacion extraida de la pagina
+
+         print(convert_n+". ",HostName,Usuario,Radicado,Fecha,FechaRadicacion,Nombres,Cedula,CentroCostos,NombreCentroCostos,TipoNovedad,Operacion,RecursoT,PermisoAsoc,DeviceID,j_USB)
+
+         info=[HostName,Usuario,Radicado,Fecha,FechaRadicacion,Nombres,Cedula,CentroCostos,NombreCentroCostos,TipoNovedad,Operacion,RecursoT,PermisoAsoc,DeviceID,j_USB]# almacena en un vector
+
+         thewriter.writerow(info)#Escribe en archivo
+
+ 
+
+     def limpiar(): #Limpiar las variables usadas para evitar inconvenientes en la reutilizacion
+
+         TotalTable=""
+
+         tr=None
+
+         RecursoT=None
+
+         PermisoAsoc=None
+
+         HostName=None
+
+         j_USB=None
+
+     
+
+     for n in range(1,len(Total)+1):
+
+         tupl=[]
+
+         j_USB=""
+
+         DeviceID="" # Se usa en permisos de unidad de CD, su estado inicial siempre será vacio.
+
+         convert_n=str(n)#convierte el total de casos a variable string para poder concatenar en las dos linea siguiente
+
+         RecTec=driver.find_element(By.XPATH, "//table[@id=\'example\']/tbody/tr["+convert_n+"]/td[6]").get_attribute("textContent")#Extra el Recurso Tecnologico
+
+         Operacion=driver.find_element(By.XPATH, "//table[@id=\'example\']/tbody/tr["+convert_n+"]/td[3]").get_attribute("textContent")#Extra la culumna Operacion
+
+         driver.find_element(By.XPATH, "//table[@id=\'example\']/tbody/tr["+convert_n+"]/td[1]").click()
+
+         Usuario= driver.find_element(By.XPATH, "//table[@id='datosRedTbl']/tbody/tr/td[2]/input").get_attribute("value")
+
+         Radicado= driver.find_element(By.XPATH, "//table[@id='regNovPreTbl']/tbody/tr[2]/td[4]/input").get_attribute("value")
+
+         FechaRadicacion= driver.find_element(By.XPATH, "//table[@id=\'regNovPreTbl\']/tbody/tr/td[4]/input").get_attribute("value")
+
+         Nombres= driver.find_element(By.XPATH, "//table[@id='datosBasicosTbl']/tbody/tr[4]/td[2]/input").get_attribute("value")
+
+         Cedula= driver.find_element(By.XPATH, "//table[@id='datosBasicosTbl']/tbody/tr/td[4]/input").get_attribute("value")
+
+         CentroCostos=driver.find_element(By.XPATH, "//table[@id='localActualTbl']/tbody/tr/td[2]/input").get_attribute("value")
+
+         NombreCentroCostos=driver.find_element(By.XPATH, "//table[@id='localActualTbl']/tbody/tr/td[4]/input").get_attribute("value")
+
+         TipoNovedad= driver.find_element(By.XPATH,"//table[@id='regNovPreTbl']/tbody/tr[2]/td[2]/input").get_attribute("value")    
+
+         time.sleep(2)
+
+       
+
+         if (RecTec=="CIFRADO") or (RecTec=="Consola de Antivirus") or (RecTec=="DLP"):
+
+             HostName="N/A"        
+
+             if (Operacion=="CREACIÓN DE USUARIOS") or (Operacion=="Creación y asociación de un perfil en el flujo de usuarios."):
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):                  
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[1]/center").get_attribute("textContent") #Modificacion de usuario  
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[2]/center").get_attribute("textContent")  #modificacion de usuario                                        
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         Busca = driver.find_element(By.XPATH, "/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center")#Busca el boton que contiene el nombre de equipo
+
+                         webdriver.ActionChains(driver).move_to_element(Busca).perform()# centra en la pantalla el contenedor                
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         if (RecursoT=="Unidad de CD"):
+
+                             HN3,D_Id=Equipo_Recurso_CD()
+
+                             HostName=HN3
+
+                             DeviceID=D_Id                          
+
+                         if (RecursoT=="Puerto USB"):
+
+                             tupl=Equipo_Recurso_USB()
+
+                             HostName=tupl[0]
+
+                             j_USB=tupl[1]                      
+
+                         if (RecursoT=="Escritorio Remoto"):
+
+                             HostName=Equipo_Recurso()
+
+                         Guardar()
+
+                         DeviceID="" # se borra para que no se imprima en el proximo subclico
+
+                         driver.back()    
+
+                         driver.switch_to.frame(0)
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             if (Operacion=="Eliminar perfil en el flujo de usuarios") or (Operacion=="ELIMINACION DE USUARIOS"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             Regresar()                
+
+         if (RecTec=="Escritorio Remoto"):
+
+             HostName="N/A"
+
+             if (Operacion=="Asociar perfil en el Flujo de Usuarios"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("//*[@id='permisosAsociadosMTbl']/tbody/tr"))#cuenta el numero de casos            
+
+               
+
+                 if (TotalTable==1):
+
+                     RecursoT=driver.find_element_by_xpath("//*[@id='fila_PRO224-Mod']/center").get_attribute("textContent") #Modificacion de usuario  
+
+                     PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosMTbl']/tbody/tr/td[3]/center").get_attribute("textContent")  #modificacion de usuario                    
+
+                     HostName=Equipo_Recurso()
+
+                     Guardar()
+
+                 elif (TotalTable>=2):
+
+                     print("Hay mas de dos casos (linea 179!)")
+
+                     driver.close()
+
+                 limpiar()
+
+             if (Operacion=="CREACIÓN DE USUARIOS") or (Operacion=="Creación y asociación de un perfil en el flujo de usuarios."):                
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):        
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[1]/center").get_attribute("textContent") #Modificacion de usuario  
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[2]/center").get_attribute("textContent")  #modificacion de usuario                    
+
+                     HostName=Equipo_Recurso()
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         Busca = driver.find_element(By.XPATH, "/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center")#Busca el boton que contiene el nombre de equipo
+
+                         webdriver.ActionChains(driver).move_to_element(Busca).perform()# centra en la pantalla el contenedor                
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         if (RecursoT=="Unidad de CD"):
+
+                             HN3,D_Id=Equipo_Recurso_CD()
+
+                             HostName=HN3
+
+                             DeviceID=D_Id                          
+
+                         if (RecursoT=="Puerto USB"):
+
+                             tupl=Equipo_Recurso_USB()
+
+                             HostName=tupl[0]
+
+                             j_USB=tupl[1]                      
+
+                         if (RecursoT=="Escritorio Remoto"):
+
+                             HostName=Equipo_Recurso()
+
+                         Guardar()
+
+                         DeviceID="" # se borra para que no se imprima en el proximo subclico
+
+                         driver.back()    
+
+                         driver.switch_to.frame(0)
+
+                 limpiar()#limpiar todas las variables utilizadas                
+
+             if (Operacion=="MODIFICACION DE USUARIOS"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/tr"))#cuenta el numero de casos                            
+
+                 if (TotalTable==1):                    
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/tr/td[2]/center").get_attribute("textContent")  
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/tr/td[3]/center").get_attribute("textContent")
+
+                     HostName=Equipo_Recurso()
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         Busca = driver.find_element(By.XPATH, "/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[2]/center")#Busca el boton que contiene el nombre de equipo
+
+                         webdriver.ActionChains(driver).move_to_element(Busca).perform()# centra en la pantalla el contenedor            
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[3]/center").get_attribute("textContent")
+
+                         if (RecursoT=="Unidad de CD"):
+
+                             HN3,D_Id=Equipo_Recurso_CD()
+
+                             HostName=HN3
+
+                             DeviceID=D_Id                            
+
+                         if (RecursoT=="Puerto USB"):
+
+                             tupl=Equipo_Recurso_USB()
+
+                             HostName=tupl[0]
+
+                             j_USB=tupl[1]
+
+                         if (RecursoT=="Escritorio Remoto"):
+
+                             HostName=Equipo_Recurso()
+
+                         Guardar()
+
+                         DeviceID="" # se borra para que no se imprima en el proximo subclico
+
+                         driver.back()    
+
+                         driver.switch_to.frame(0)
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             if (Operacion=="INACTIVACIÓN USUARIO"):              
+
+                 TotalTable= len(driver.find_elements_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/tr"))#cuenta el numero de caso
+
+                 if (TotalTable==1):                    
+
+                     RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()                        
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             if (Operacion=="ACTIVACIÓN USUARIO"):              
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/tr"))#cuenta el numero de caso
+
+                 if (TotalTable==1):                  
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()                        
+
+                 limpiar()#limpiar todas las variables utilizadas          
+
+             if (Operacion=="Eliminar perfil en el flujo de usuarios") or (Operacion=="ELIMINACION DE USUARIOS"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[2]/div/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             Regresar()
+
+         if (RecTec=="Puerto USB"):
+
+             HostName="N/A" # Se asigna un N/A    
+
+             if (Operacion=="CREACIÓN DE USUARIOS") or (Operacion=="Creación y asociación de un perfil en el flujo de usuarios."):
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):                  
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[1]/center").get_attribute("textContent") #Modificacion de usuario  
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[2]/center").get_attribute("textContent")  #modificacion de usuario                    
+
+                     tupl=Equipo_Recurso_USB()
+
+                     HostName=tupl[0]
+
+                     j_USB=tupl[1]
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         Busca = driver.find_element(By.XPATH, "/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center")#Busca el boton que contiene el nombre de equipo
+
+                         webdriver.ActionChains(driver).move_to_element(Busca).perform()# centra en la pantalla el contenedor                
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         if (RecursoT=="Unidad de CD"):
+
+                             HN3,D_Id=Equipo_Recurso_CD()
+
+                             HostName=HN3
+
+                             DeviceID=D_Id                            
+
+                         if (RecursoT=="Puerto USB"):
+
+                             tupl=Equipo_Recurso_USB()
+
+                             HostName=tupl[0]
+
+                             j_USB=tupl[1]                        
+
+                         if (RecursoT=="Escritorio Remoto"):
+
+                             HostName=Equipo_Recurso()
+
+                         Guardar()
+
+                         DeviceID="" # se borra para que no se imprima en el proximo subclico
+
+                         driver.back()    
+
+                         driver.switch_to.frame(0)
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             if (Operacion=="Eliminar perfil en el flujo de usuarios") or (Operacion=="ELIMINACION DE USUARIOS"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):
+
+                     RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             if (Operacion=="INACTIVACIÓN USUARIO"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/tr"))#cuenta el numero de caso
+
+                 if (TotalTable==1):                
+
+                     RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosInaTbl']/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()                        
+
+                 limpiar()                                                  
+
+             if (Operacion=="MODIFICACION DE USUARIOS"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("//*[@id='permisosAsociadosMTbl']/tbody/tr"))#cuenta el numero de casos                            
+
+                 if (TotalTable==1):                    
+
+                     RecursoT=driver.find_element_by_xpath("//*[@id='fila_PRO8-Mod']/center").get_attribute("textContent")  
+
+                     PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosMTbl']/tbody/tr/td[3]/center").get_attribute("textContent")
+
+                     tupl=Equipo_Recurso_USB()
+
+                     HostName=tupl[0]
+
+                     j_USB=tupl[1]
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         Busca = driver.find_element(By.XPATH, "/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[2]/center")#Busca el boton que contiene el nombre de equipo
+
+                         webdriver.ActionChains(driver).move_to_element(Busca).perform()# centra en la pantalla el contenedor            
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[3]/center").get_attribute("textContent")
+
+                         if (RecursoT=="Unidad de CD"):
+
+                             HN3,D_Id=Equipo_Recurso_CD()
+
+                             HostName=HN3
+
+                             DeviceID=D_Id                            
+
+                         if (RecursoT=="Puerto USB"):
+
+                             tupl=Equipo_Recurso_USB()
+
+                             HostName=tupl[0]
+
+                             j_USB=tupl[1]
+
+                         if (RecursoT=="Escritorio Remoto"):
+
+                             HostName=Equipo_Recurso()
+
+                         Guardar()
+
+                         DeviceID="" # borra para que no se imprima en el proximo subclico
+
+                         driver.back()    
+
+                         driver.switch_to.frame(0)
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             if (Operacion=="ACTIVACIÓN USUARIO"):                
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/tr"))#cuenta el numero de caso
+
+                 if (TotalTable==1):                    
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[5]/div/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()                        
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             Regresar()
+
+         if (RecTec=="Unidad de CD"):
+
+             HostName="N/A" # Se asigna un N/A
+
+             if (Operacion=="CREACIÓN DE USUARIOS") or (Operacion=="Creación y asociación de un perfil en el flujo de usuarios."):
+
+                 TotalTable= len(driver.find_elements_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):                  
+
+                     RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[1]/center").get_attribute("textContent") #Modificacion de usuario  
+
+                     PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/tr/td[2]/center").get_attribute("textContent")  #modificacion de usuario                    
+
+                     HN3,D_Id=Equipo_Recurso_CD()
+
+                     HostName=HN3
+
+                     DeviceID=D_Id
+
+                     Guardar()
+
+                     
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         Busca = driver.find_element(By.XPATH, "/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center")#Busca el boton que contiene el nombre de equipo
+
+                         webdriver.ActionChains(driver).move_to_element(Busca).perform()# centra en la pantalla el contenedor                
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[1]/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         if (RecursoT=="Unidad de CD"):
+
+                             HN3,D_Id=Equipo_Recurso_CD()
+
+                             HostName=HN3
+
+                             DeviceID=D_Id                          
+
+                         if (RecursoT=="Puerto USB"):
+
+                             tupl=Equipo_Recurso_USB()
+
+                             HostName=tupl[0]
+
+                             j_USB=tupl[1]                        
+
+                         if (RecursoT=="Escritorio Remoto"):
+
+                             HostName=Equipo_Recurso()
+
+                         Guardar()
+
+                         DeviceID="" # se borra para que no se imprima en el proximo subclico
+
+                         driver.back()    
+
+                         driver.switch_to.frame(0)
+
+                 limpiar()#limpiar todas las variables utilizadas                
+
+             if (Operacion=="MODIFICACION DE USUARIOS"): #Funciona
+
+                 TotalTable= len(driver.find_elements_by_xpath("//*[@id='permisosAsociadosMTbl']/tbody/tr"))#cuenta el numero de casos                
+
+                 if (TotalTable==1):
+
+                     try:                    
+
+                         RecursoT=driver.find_element_by_xpath("//*[@id='fila_PRO8-Mod']/center").get_attribute("textContent") #Modificacion de usuario  
+
+                     except NoSuchElementException:# si no encuentra la anterior ruta, prueba la siguiente. # se agrega 04/02/2022
+
+                         RecursoT=driver.find_element_by_xpath("//*[@id='fila_PRO357-Mod']/center").get_attribute("textContent") #Modificacion de usuario  
+
+                     PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosMTbl']/tbody/tr/td[3]/center").get_attribute("textContent")  #modificacion de usuario                    
+
+                     HN3,D_Id=Equipo_Recurso_CD()
+
+                     HostName=HN3
+
+                     DeviceID=D_Id
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         Busca = driver.find_element(By.XPATH, "/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[2]/center")#Busca el boton que contiene el nombre de equipo
+
+                         webdriver.ActionChains(driver).move_to_element(Busca).perform()# centra en la pantalla el contenedor                
+
+                         RecursoT=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("/html/body/div[4]/fieldset/div[7]/div/table/tbody/"+tr+"/td[3]/center").get_attribute("textContent")
+
+                         if (RecursoT=="Unidad de CD"):
+
+                             HN3,D_Id=Equipo_Recurso_CD()
+
+                             HostName=HN3
+
+                             DeviceID=D_Id                          
+
+                         if (RecursoT=="Puerto USB"):
+
+                             tupl=Equipo_Recurso_USB()
+
+                             HostName=tupl[0]
+
+                             j_USB=tupl[1]                        
+
+                         if (RecursoT=="Escritorio Remoto"):
+
+                             HostName=Equipo_Recurso()
+
+                         Guardar()
+
+                         DeviceID="" # se borra para que no se imprima en el proximo subclico
+
+                         driver.back()    
+
+                         driver.switch_to.frame(0)
+
+                 limpiar()#limpiar todas las variables utilizadas      
+
+             if (Operacion=="Eliminar perfil en el flujo de usuarios") or (Operacion=="ELIMINACION DE USUARIOS"):
+
+                 TotalTable= len(driver.find_elements_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/tr"))#cuenta el numero de casos            
+
+                 if (TotalTable==1):
+
+                     RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/tr/td[1]/center").get_attribute("textContent")
+
+                     PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/tr/td[2]/center").get_attribute("textContent")
+
+                     Guardar()
+
+                 elif (TotalTable>=2):        
+
+                     for n in range(1,TotalTable+1):
+
+                         tr=("tr"+"["+str(n)+"]")
+
+                         RecursoT=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/"+tr+"/td[1]/center").get_attribute("textContent")
+
+                         PermisoAsoc=driver.find_element_by_xpath("//*[@id='permisosAsociadosEliTbl']/tbody/"+tr+"/td[2]/center").get_attribute("textContent")
+
+                         Guardar()
+
+                 limpiar()#limpiar todas las variables utilizadas
+
+             Regresar()
+
+ 
+
+if len(Total)>=1:#Almacena el reporte obtenido en un repositorio
+
+   
+
+     Ruta_Temporal='PermisosCVU.csv'
+
+     Ruta_Casos='\\\\bdbemcfs.bancodebogota.net\\DSIC\\05. Operacional\\009- Aseguramiento\\Escritorio_Remoto\\ReportesCVU\\Casos.xlsx'
+
+ 
+
+     try:#apertura de informe generado
+
+         rt = pd.read_csv(Ruta_Temporal,encoding='utf-8')
+
+         df_rt = pd.DataFrame(rt)#convierte a dataframe
+
+     except FileNotFoundError:
+
+         print("Error al cargar el archivo 'PermisosCVU.csv'")
+
+         msvcrt.getch()
+
+         quit()
+
+     print ("Añadiendo reporte al archivo ubicado en: "+Ruta_Casos)
+
+ 
+
+     # apertura del archivo Casos.xlsx                  
+
+     book = load_workbook(Ruta_Casos)
+
+     writer = pd.ExcelWriter(Ruta_Casos, engine='openpyxl')
+
+     writer.book = book
+
+     max_fila=book.active.max_row #calcular la ultima fila con valores# min_col=e.active.min_column
+
+     #Guarda el df en el excel en la hoja apropiada.
+
+     writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+
+     df_rt.to_excel(writer, book.worksheets[0].title, startcol = 0,startrow = max_fila, header = None,index=False)
+
+     writer.save()
+
+print("Creando reporte de eliminacion de permisos de Escritorio Remoto...")
+
+#import Informe_Elimin_Escritorio_Remoto
+
+driver.close()
+
+print("FIN")
